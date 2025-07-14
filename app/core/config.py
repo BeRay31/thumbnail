@@ -29,7 +29,7 @@ class Settings(BaseSettings):
         super().__init__(**values)
         if not self.DATABASE_URL:
             self.DATABASE_URL = (
-                f"postgresql+psycopg3://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@"
+                f"postgresql+psycopg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@"
                 f"{self.POSTGRES_SERVER}/{self.POSTGRES_DB}"
             )
 
