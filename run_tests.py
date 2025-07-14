@@ -7,13 +7,9 @@ def run_tests():
     project_root = os.path.dirname(os.path.abspath(__file__))
     os.chdir(project_root)
     
-    # Run pytest
     cmd = [
         sys.executable, "-m", "pytest",
-        "tests/",
-        "-v",
-        "--tb=short",
-        "--disable-warnings"
+        "tests/", "-v", "--tb=short", "--disable-warnings"
     ]
     
     print("Running tests...")
@@ -22,15 +18,13 @@ def run_tests():
     
     result = subprocess.run(cmd, capture_output=False)
     
+    print("\n" + "=" * 50)
     if result.returncode == 0:
-        print("\n" + "=" * 50)
-        print("✅ All tests passed!")
+        print("All tests passed!")
     else:
-        print("\n" + "=" * 50)
-        print("❌ Some tests failed!")
+        print("Some tests failed!")
         
     return result.returncode
 
 if __name__ == "__main__":
-    exit_code = run_tests()
-    sys.exit(exit_code)
+    sys.exit(run_tests())

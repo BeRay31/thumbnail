@@ -28,27 +28,23 @@ celery_app.conf.update(
 # Custom logging setup for Celery workers
 @setup_logging.connect
 def config_loggers(*args, **kwargs):
-    """
-    Setup logging for Celery workers using our custom logging configuration
-    """
+    """Setup logging for Celery workers"""
     from app.core.logging import setup_logging as app_setup_logging, get_logger
     
-    # Setup our structured logging
     log_level = os.getenv("LOG_LEVEL", "INFO")
     app_setup_logging(level=log_level)
     
-    # Get logger and announce that Celery logging is configured
     logger = get_logger("celery.setup")
-    logger.info(f"🔧 Celery worker logging configured with level: {log_level}")
+    logger.info(f"Celery worker logging configured with level: {log_level}")
 
 @worker_ready.connect
 def worker_ready_handler(sender=None, **kwargs):
     from app.core.logging import get_logger
     logger = get_logger("celery.worker")
-    logger.info(f"🚀 Celery worker {sender.hostname} is ready to process tasks")
+    logger.info(f"Celery worker {sender.hostname} ready")
 
 @worker_shutdown.connect  
 def worker_shutdown_handler(sender=None, **kwargs):
     from app.core.logging import get_logger
     logger = get_logger("celery.worker")
-    logger.info(f"🛑 Celery worker {sender.hostname} is shutting down")
+    logger.info(f"Celery worker {sender.hostname} shutting down")

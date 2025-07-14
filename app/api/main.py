@@ -15,16 +15,16 @@ logger = get_logger("main")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("🚀 Starting Thumbnail Service...")
+    logger.info("Starting application...")
     try:
         init_db()
-        logger.info("✅ Database initialization completed")
+        logger.info("Database initialized")
     except Exception as e:
-        logger.error(f"❌ Failed to initialize database: {e}")
+        logger.error(f"Database initialization failed: {e}")
         raise e
     
-    yield  # Application is running
-    logger.info("🛑 Shutting down Thumbnail Service...")
+    yield
+    logger.info("Shutting down...")
 
 app = FastAPI(
     title="Cogent Labs Thumbnail API",

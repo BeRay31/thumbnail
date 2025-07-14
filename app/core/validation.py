@@ -24,97 +24,79 @@ ALLOWED_EXTENSIONS: Set[str] = {
 
 # File size limits
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
-MIN_FILE_SIZE = 100  # 100 bytes
+MIN_FILE_SIZE = 10  # 10 bytes
 
 def validate_image_file(file: UploadFile) -> None:
-    """
-    Validate uploaded image file
-    
-    Args:
-        file: The uploaded file
-        
-    Raises:
-        HTTPException: If validation fails
-    """
-    # Check if file is provided
+    """Validate uploaded image file"""
     if not file or not file.filename:
-        logger.warning("No file provided in upload")
         raise HTTPException(status_code=400, detail="No file provided")
     
     # Check file extension
     filename = file.filename.lower()
     if not any(filename.endswith(ext) for ext in ALLOWED_EXTENSIONS):
-        logger.warning(f"Invalid file extension for file: {file.filename}")
         raise HTTPException(
             status_code=400, 
-            detail=f"Invalid file type. Allowed extensions: {', '.join(ALLOWED_EXTENSIONS)}"
+            detail=f"Invalid file type. Allowed: {', '.join(ALLOWED_EXTENSIONS)}"
         )
     
     # Check MIME type
     if file.content_type and file.content_type not in ALLOWED_IMAGE_TYPES:
-        logger.warning(f"Invalid content type: {file.content_type} for file: {file.filename}")
         raise HTTPException(
             status_code=400,
-            detail=f"Invalid content type. Allowed types: {', '.join(ALLOWED_IMAGE_TYPES)}"
+            detail=f"Invalid content type. Allowed: {', '.join(ALLOWED_IMAGE_TYPES)}"
         )
     
-    # Read file content for further validation
     try:
         content = file.file.read()
-        file.file.seek(0)  # Reset file pointer
+        file.file.seek(0)
         
         # Check file size
         if len(content) > MAX_FILE_SIZE:
-            logger.warning(f"File too large: {len(content)} bytes for file: {file.filename}")
             raise HTTPException(
                 status_code=400,
-                detail=f"File too large. Maximum size: {MAX_FILE_SIZE // (1024*1024)}MB"
+                detail=f"File too large. Maximum: {MAX_FILE_SIZE // (1024*1024)}MB"
             )
         
         if len(content) < MIN_FILE_SIZE:
-            logger.warning(f"File too small: {len(content)} bytes for file: {file.filename}")
             raise HTTPException(
                 status_code=400,
-                detail=f"File too small. Minimum size: {MIN_FILE_SIZE} bytes"
+                detail=f"File too small. Minimum: {MIN_FILE_SIZE} bytes"
             )
         
-        # Validate that it's actually an image by opening with PIL
+        # Validate with PIL
         try:
             image = Image.open(io.BytesIO(content))
-            image.verify()  # Verify it's a valid image
+            image.verify()
             
-            # Reset and get basic image info
             image = Image.open(io.BytesIO(content))
             width, height = image.size
             
-            logger.info(f"Valid image uploaded: {file.filename}, size: {width}x{height}, format: {image.format}")
+            logger.info(f"Valid image: {file.filename}, {width}x{height}, {image.format}")
             
-            # Check minimum dimensions
             if width < 10 or height < 10:
                 raise HTTPException(
                     status_code=400,
-                    detail="Image dimensions too small (minimum 10x10 pixels)"
+                    detail="Image too small (minimum 10x10 pixels)"
                 )
             
-            # Check maximum dimensions  
             if width > 10000 or height > 10000:
                 raise HTTPException(
                     status_code=400,
-                    detail="Image dimensions too large (maximum 10000x10000 pixels)"
+                    detail="Image too large (maximum 10000x10000 pixels)"
                 )
                 
         except Exception as e:
-            logger.error(f"Invalid image file: {file.filename}, error: {str(e)}")
+            logger.error(f"Invalid image {file.filename}: {str(e)}")
             raise HTTPException(
                 status_code=400,
-                detail="Invalid image file or corrupted image data"
+                detail="Invalid or corrupted image file"
             )
             
+    except HTTPException:
+        raise
     except Exception as e:
-        if isinstance(e, HTTPException):
-            raise
-        logger.error(f"Error validating file: {file.filename}, error: {str(e)}")
-        raise HTTPException(status_code=500, detail="Error processing uploaded file")
+        logger.error(f"Error validating {file.filename}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error processing file")
 
 def validate_pagination_params(skip: int, limit: int) -> tuple[int, int]:
     """

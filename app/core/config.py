@@ -1,23 +1,20 @@
 # app/core/config.py
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-"""
-Manages application-wide settings loaded from environment variables.
-"""
 class Settings(BaseSettings):
     # Database settings
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_SERVER: str
-    POSTGRES_PORT: int = 5432  # Add port setting
+    POSTGRES_PORT: int = 5432
     POSTGRES_DB: str
     DATABASE_URL: str = ""
 
-    # Redis settings for Celery broker
+    # Redis settings
     REDIS_HOST: str
     REDIS_PORT: int = 6379
 
-    # MinIO settings for object storage
+    # MinIO settings
     MINIO_ENDPOINT: str
     MINIO_ACCESS_KEY: str
     MINIO_SECRET_KEY: str
@@ -34,5 +31,4 @@ class Settings(BaseSettings):
                 f"{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
             )
 
-# Singleton instance of Settings
 settings = Settings()

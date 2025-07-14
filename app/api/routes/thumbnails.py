@@ -12,6 +12,7 @@ router = APIRouter()
 
 @router.get("/thumbnails/{job_id}", tags=["Thumbnails"])
 def get_thumbnail(job_id: UUID, db: Session = Depends(get_db)):
+    """Get thumbnail image by id"""
     logger.info(f"Attempting to retrieve thumbnail for job {job_id}")
     job = db.query(db_models.Job).filter(db_models.Job.id == job_id).first()
 
