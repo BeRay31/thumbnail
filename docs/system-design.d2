@@ -1,0 +1,43 @@
+user: "👤 User"
+
+k8s_cluster: "☸️ Kubernetes Cluster" {
+  fastapi_servers: "FastAPI Servers" {
+    style.multiple: true
+  }
+  celery_workers: "Celery Workers" {
+    style.multiple: true
+  }
+
+  # Each storage component has a distinct role
+  redis: "💾 Redis (Broker)"
+  postgres: "🐘 PostgreSQL (DB)"
+  minio: "🗄️ MinIO (Object Storage)"
+}
+
+# --- Request Flow ---
+
+# API Server interactions
+user -> k8s_cluster.fastapi_servers: "API Requests" {
+  style.animated: true
+}
+
+k8s_cluster.fastapi_servers -> k8s_cluster.minio: "Upload Original" {
+  style.animated: true
+}
+k8s_cluster.fastapi_servers -> k8s_cluster.postgres: "Create Job Record" {
+  style.animated: true
+}
+k8s_cluster.fastapi_servers -> k8s_cluster.redis: "Publish Job ID" {
+  style.animated: true
+}
+
+# Worker interactions
+k8s_cluster.redis -> k8s_cluster.celery_workers: "Consume Job ID" {
+  style.animated: true
+}
+k8s_cluster.celery_workers <-> k8s_cluster.postgres: "R/W Job Status" {
+  style.animated: true
+}
+k8s_cluster.celery_workers <-> k8s_cluster.minio: "R/W Images" {
+  style.animated: true
+}
