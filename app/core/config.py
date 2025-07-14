@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_SERVER: str
+    POSTGRES_PORT: int = 5432  # Add port setting
     POSTGRES_DB: str
     DATABASE_URL: str = ""
 
@@ -29,8 +30,8 @@ class Settings(BaseSettings):
         super().__init__(**values)
         if not self.DATABASE_URL:
             self.DATABASE_URL = (
-                f"postgresql+psycopg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@"
-                f"{self.POSTGRES_SERVER}/{self.POSTGRES_DB}"
+                f"postgresql+psycopg2://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@"
+                f"{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
             )
 
 # Singleton instance of Settings
