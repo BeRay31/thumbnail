@@ -4,22 +4,17 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from app.api.routes import jobs, thumbnails
+from app.api.routes import jobs, thumbnails, health
 from app.core.config import settings
+from app.core.logging import setup_logging, get_logger
 from app.db.session import init_db
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-logger = logging.getLogger(__name__)
+# Setup structured logging
+setup_logging()
+logger = get_logger("main")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """
-    Lifespan event handler for FastAPI application
-    """
     logger.info("🚀 Starting Thumbnail Service...")
     try:
         init_db()
@@ -38,9 +33,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-@app.get("/healthz", tags=["Health Check"])
-def health_check():
-    return {"status": "ok", "message": "API is healthy"}
-
-app.include_router(jobs.router, tags=["Thumbnail Jobs"])
-app.include_router(thumbnails.router, tags=["Thumbnail Jobs"])
+# Include routers
+app.include_router(health.router)
+app.include_router(jobs.router)
+app.include_router(thumbnails.router)
