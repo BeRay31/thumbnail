@@ -25,7 +25,7 @@ Your job:
 
 ---
 
-## ✅ Requirements
+## ✅ Requirementsz
 
 You may enhance these features, but we don’t expect "bells and whistles". Focus on good judgment. Feel free to mention additional ideas in your README as future improvements.
 
