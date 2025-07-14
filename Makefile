@@ -11,8 +11,6 @@ help:
 	@echo "  logs      - Show logs for all services"
 	@echo "  clean     - Remove all containers and volumes"
 	@echo "  restart   - Restart all services"
-	@echo "  shell     - Open shell in server container"
-	@echo "  test      - Run tests"
 
 # Build Docker images
 build:
@@ -37,19 +35,3 @@ clean:
 
 # Restart services
 restart: down up
-
-# Open shell in server container
-shell:
-	docker-compose exec server bash
-
-# Run tests
-test:
-	docker-compose exec server python -m pytest
-
-# Development mode (with live reload)
-dev:
-	docker-compose up --build
-
-# Check service status
-status:
-	docker-compose ps
