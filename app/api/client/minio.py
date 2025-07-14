@@ -14,7 +14,7 @@ class MinioClient:
             secret_key=settings.MINIO_SECRET_KEY,
             secure=False
         )
-        self._ensure_buckets_exist()
+        self.init_buckets()
 
     def init_buckets(self):
         try:
