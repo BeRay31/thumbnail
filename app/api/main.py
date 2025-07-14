@@ -9,7 +9,7 @@ from app.core.config import settings
 from app.core.logging import setup_logging, get_logger
 from app.db.session import init_db
 
-# Setup structured logging
+# Setup logging
 setup_logging()
 logger = get_logger("main")
 

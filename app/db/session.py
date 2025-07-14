@@ -35,7 +35,6 @@ def init_db():
     except Exception as e:
         logger.error(f"❌ Error initializing database: {e}")
         logger.error("💡 Make sure PostgreSQL is running and connection details are correct")
-        logger.error("💡 Check your .env file or run: docker-compose up -d postgres")
         raise e
 
 def get_db(): # DB Session

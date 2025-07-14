@@ -51,19 +51,16 @@ class MinioClient:
     def save_file(self, bucket_name: str, file_name: str, data: bytes):
         """
         Save file data to MinIO bucket
-        
         Args:
             bucket_name: Target bucket name
             file_name: Object name/key in the bucket
             data: File data as bytes
-            
         Raises:
             Exception: If save operation fails
         """
         logger.info(f"Saving file '{file_name}' to bucket '{bucket_name}' ({len(data)} bytes)")
         
         try:
-            # Validate inputs
             if not bucket_name or not file_name:
                 raise ValueError("Bucket name and file name are required")
             
@@ -78,7 +75,6 @@ class MinioClient:
                 length=len(data),
                 content_type='application/octet-stream'
             )
-            
             logger.info(f"Successfully saved file '{file_name}' to bucket '{bucket_name}'")
             
         except S3Error as e:

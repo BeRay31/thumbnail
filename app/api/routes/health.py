@@ -39,7 +39,6 @@ def detailed_health_check():
     
     # Check MinIO connectivity
     try:
-        # Try to list buckets to verify connection
         buckets = minio_client.client.list_buckets()
         bucket_names = [bucket.name for bucket in buckets]
         health_status["checks"]["storage"] = {

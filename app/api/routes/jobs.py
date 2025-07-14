@@ -38,7 +38,6 @@ def submit_job(
         
         logger.info(f"Created job {new_job.id} for file: {image.filename}")
 
-        # Try Read and save image data to MinIO
         try:
             image_data = image.file.read()
             minio_client.save_file(

@@ -11,8 +11,7 @@ def setup_logging(level: str = "INFO"):
     # Create logs directory if it doesn't exist
     os.makedirs("/app/logs", exist_ok=True)
     
-    # Configure logging
-    # Follow these https://docs.python.org/3/library/logging.config.html
+    # Follow these conventions https://docs.python.org/3/library/logging.config.html
     logging.config.dictConfig(LOGGING_CONFIG)
     
     # Set root level based on environment
