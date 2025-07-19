@@ -1,8 +1,6 @@
-# app/core/config.py
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
-    # Database settings
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_SERVER: str
@@ -10,11 +8,9 @@ class Settings(BaseSettings):
     POSTGRES_DB: str
     DATABASE_URL: str = ""
 
-    # Redis settings
     REDIS_HOST: str
     REDIS_PORT: int = 6379
 
-    # MinIO settings
     MINIO_ENDPOINT: str
     MINIO_ACCESS_KEY: str
     MINIO_SECRET_KEY: str
