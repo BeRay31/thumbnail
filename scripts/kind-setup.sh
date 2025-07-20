@@ -1,39 +1,37 @@
 #!/bin/bash
 set -e
 
-echo "Setting up Kind cluster for thumbnail service..."
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/config.sh"
 
-CLUSTER_NAME="thumbnail-service"
-KIND_NODE_IMAGE="kindest/node:v1.33.1"
+echo "Setting up kind cluster..."
 
-# Check dependencies
+# dependency checks
 if ! command -v kind &> /dev/null; then
-    echo "Error: kind is not installed"
-    echo "Install from: https://kind.sigs.k8s.io/docs/user/quick-start/"
+    echo "Error: kind not found"
+    echo "Install: https://kind.sigs.k8s.io/docs/user/quick-start/"
     exit 1
 fi
 
 if ! command -v docker &> /dev/null; then
-    echo "Error: docker is not installed"  
-    echo "Install from: https://docs.docker.com/get-docker/"
+    echo "Error: docker not found"
     exit 1
 fi
 
 if ! command -v kubectl &> /dev/null; then
-    echo "Error: kubectl is not installed"
-    echo "Install from: https://kubernetes.io/docs/tasks/tools/"
+    echo "Error: kubectl not found"
     exit 1
 fi
 
-echo "Pulling container images..."
+echo "Pulling images..."
 
-# Infrastructure images needed for the service
+# images we need
 images=(
     "$KIND_NODE_IMAGE"
-    "postgres:15"
-    "redis:7-alpine" 
-    "minio/minio:latest"
-    "minio/mc:latest"
+    "$POSTGRES_IMAGE"
+    "$REDIS_IMAGE" 
+    "$MINIO_IMAGE"
+    "$MINIO_MC_IMAGE"
 )
 
 for image in "${images[@]}"; do
@@ -41,21 +39,16 @@ for image in "${images[@]}"; do
         echo "  $image (cached)"
     else
         echo "  $image"
-        docker pull "$image" || {
-            echo "Failed to pull $image"
-            exit 1
-        }
+        docker pull "$image" || exit 1
     fi
 done
 
-# Check if cluster exists
+# create cluster if needed
 if kind get clusters 2>/dev/null | grep -q "^${CLUSTER_NAME}$"; then
-    echo "Cluster '$CLUSTER_NAME' already exists"
-    echo "Delete with: kind delete cluster --name $CLUSTER_NAME"
+    echo "Cluster '$CLUSTER_NAME' exists"
     kubectl config use-context "kind-${CLUSTER_NAME}"
-    echo "Switched to existing cluster"
 else
-    echo "Creating cluster '$CLUSTER_NAME'..."
+    echo "Creating cluster..."
     
     cat <<EOF | kind create cluster --name "$CLUSTER_NAME" --image "$KIND_NODE_IMAGE" --config=-
 kind: Cluster
@@ -63,35 +56,27 @@ apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
 - role: control-plane
   extraPortMappings:
-  - containerPort: 30000
-    hostPort: 30000
+  - containerPort: $CONTAINER_PORT
+    hostPort: $HOST_PORT
     protocol: TCP
 EOF
 
     kubectl config use-context "kind-${CLUSTER_NAME}"
     
-    echo "Loading images into cluster..."
-    
-    # Skip kind node image since it's already used by the cluster
+    echo "Loading infrastructure images..."
     for image in "${images[@]}"; do
-        if [[ "$image" == "$KIND_NODE_IMAGE" ]]; then
-            continue
-        fi
-        
-        echo "  Loading $image..."
-        kind load docker-image "$image" --name "$CLUSTER_NAME" || {
-            echo "Warning: failed to load $image"
-        }
+        [[ "$image" == "$KIND_NODE_IMAGE" ]] && continue
+        echo "  $image"
+        kind load docker-image "$image" --name "$CLUSTER_NAME" || true
     done
     
-    echo "Cluster created successfully"
+    echo "Cluster ready"
 fi
 
 echo
-echo "Next steps:"
-echo "  1. Build app images: ./scripts/build.sh"
-echo "  2. Load app images: ./scripts/kind-load-images.sh"
-echo "  3. Deploy: ./scripts/deploy.sh"
+echo "Next:"
+echo "  ./scripts/build.sh"
+echo "  ./scripts/kind-load-images.sh"
+echo "  ./scripts/deploy.sh"
 echo
-echo "Cluster info:"
-kubectl cluster-info --context "kind-${CLUSTER_NAME}"
+kubectl cluster-info --context "kind-${CLUSTER_NAME}" | head -1

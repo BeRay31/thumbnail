@@ -1,6 +1,6 @@
 # Makefile for Thumbnail Service
 
-.PHONY: help build up down logs clean restart shell test validate k8s-setup k8s-build k8s-deploy k8s-clean
+.PHONY: help build up down logs clean restart shell test k8s-setup k8s-build k8s-deploy k8s-clean
 
 # Default target
 help:
@@ -17,6 +17,9 @@ help:
 	@echo "Kubernetes (Production):"
 	@echo "  k8s-setup   - Create Kind cluster"
 	@echo "  k8s-build   - Build Docker images for K8s"
+	@echo "  k8s-deploy  - Deploy to Kubernetes with Helm"
+	@echo "  k8s-clean   - Delete Kind cluster"
+	@echo "  k8s-all     - Complete K8s deployment (setup + build + deploy)"
 
 # Build Docker images
 build:
@@ -48,3 +51,11 @@ k8s-setup:
 
 k8s-build:
 	./scripts/build.sh
+
+k8s-deploy:
+	./scripts/kind-load-images.sh && ./scripts/deploy.sh
+
+k8s-clean:
+	kind delete cluster --name thumbnail-service
+
+k8s-all: k8s-setup k8s-build k8s-deploy

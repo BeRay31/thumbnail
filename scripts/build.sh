@@ -1,14 +1,16 @@
 #!/bin/bash
 set -e
-echo "Building Docker images for Thumbnail Service..."
-echo "Building server image..."
-docker build -f Dockerfile.server -t thumbnail-service-server:latest .
 
-echo "Building worker image..."
-docker build -f Dockerfile.worker -t thumbnail-service-worker:latest .
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/config.sh"
 
-echo "Docker images built successfully!"
-echo "   - thumbnail-service-server:latest"
-echo "   - thumbnail-service-worker:latest"
+echo "Building images..."
+
+docker build -f Dockerfile.server -t "$SERVER_IMAGE" .
+docker build -f Dockerfile.worker -t "$WORKER_IMAGE" .
+
+echo "Built:"
+echo "  $SERVER_IMAGE"
+echo "  $WORKER_IMAGE"
 
 docker images | grep thumbnail-service
