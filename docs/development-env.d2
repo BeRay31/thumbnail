@@ -1,0 +1,26 @@
+direction: down
+
+env_file: "📄 .env file\n(local config)"
+docker_compose: "🐳 Docker Compose\n(containers)"
+application: "⚙️ Application\n(runtime)"
+
+scripts_config: "📁 scripts/config\n(k8s deployment)"
+helm_charts: "📦 Helm Charts\n(k8s resources)"
+kubernetes: "☸️ Kubernetes\n(Pods)"
+
+env_file -> docker_compose -> application: {
+  style.animated: true
+}
+env_file -> scripts_config: {
+  style.animated: true
+}
+docker_compose -> helm_charts: {
+  style.animated: true
+}
+application -> kubernetes: {
+  style.animated: true
+}
+
+scripts_config -> helm_charts -> kubernetes: {
+  style.animated: true
+}

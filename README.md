@@ -122,7 +122,8 @@ The architecture prioritizes **reliability**, **scalability**, and **maintainabi
 
 ### System Components
 
-![System Architecture](docs/system-design.svg)
+<img src="docs/system-design.svg" alt="system-design" width="800" height="800" />
+
 
 The service follows a microservices architecture with clear separation of responsibilities:
 
