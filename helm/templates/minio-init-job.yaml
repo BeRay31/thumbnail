@@ -1,0 +1,82 @@
+{{- if .Values.minio.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "thumbnail-service.fullname" . }}-minio-init
+  labels:
+    {{- include "thumbnail-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: minio-init
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  template:
+    metadata:
+      labels:
+        {{- include "thumbnail-service.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: minio-init
+    spec:
+      restartPolicy: OnFailure
+      securityContext:
+        runAsUser: 1001
+        runAsNonRoot: true
+        fsGroup: 1001
+      containers:
+      - name: minio-init
+        image: minio/mc:latest
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1001
+        env:
+        - name: MC_CONFIG_DIR
+          value: "/tmp/.mc"
+        - name: MINIO_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.existingSecret | default (printf "%s-secret" (include "thumbnail-service.fullname" .)) }}
+              key: MINIO_ACCESS_KEY
+        - name: MINIO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.existingSecret | default (printf "%s-secret" (include "thumbnail-service.fullname" .)) }}
+              key: MINIO_SECRET_KEY
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -e
+          echo "Waiting for MinIO to be ready..."
+          until mc --config-dir="$MC_CONFIG_DIR" alias set minio http://{{ include "thumbnail-service.fullname" . }}-minio:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY"; do
+            echo "MinIO not ready, waiting 10 seconds..."
+            sleep 10
+          done
+          
+          echo "Creating buckets..."
+          mc --config-dir="$MC_CONFIG_DIR" mb minio/{{ .Values.minio.buckets.originals }} --ignore-existing
+          mc --config-dir="$MC_CONFIG_DIR" mb minio/{{ .Values.minio.buckets.thumbnails }} --ignore-existing
+          
+          echo "Setting bucket policies..."
+          mc --config-dir="$MC_CONFIG_DIR" anonymous set download minio/{{ .Values.minio.buckets.originals }}
+          mc --config-dir="$MC_CONFIG_DIR" anonymous set download minio/{{ .Values.minio.buckets.thumbnails }}
+          
+          echo "MinIO initialization complete"
+        volumeMounts:
+        - name: mc-temp
+          mountPath: /tmp
+        resources:
+          limits:
+            memory: 64Mi
+            cpu: 100m
+          requests:
+            memory: 32Mi
+            cpu: 50m
+      volumes:
+      - name: mc-temp
+        emptyDir: {}
+{{- end }}

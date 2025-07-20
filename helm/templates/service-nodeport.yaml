@@ -1,0 +1,20 @@
+{{- if .Values.service.nodePort.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "thumbnail-service.fullname" . }}-server-nodeport
+  labels:
+    {{- include "thumbnail-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: server-external
+spec:
+  type: NodePort
+  ports:
+  - port: {{ .Values.service.port }}
+    targetPort: http
+    protocol: TCP
+    name: http
+    nodePort: {{ .Values.service.nodePort.port }}
+  selector:
+    {{- include "thumbnail-service.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: server
+{{- end }}

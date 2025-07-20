@@ -23,6 +23,9 @@ service:
   type: ClusterIP
   port: 8000
   annotations: {}
+  nodePort:
+    enabled: true
+    port: 30000  # This should match the Kind cluster port mapping
 
 # Deployment configuration
 server:
@@ -90,6 +93,10 @@ minio:
     enabled: true
     size: 10Gi
     storageClass: ""
+  console:
+    nodePort:
+      enabled: true
+      port: 30001
 
 # External MinIO (when minio.enabled: false)
 externalMinio:

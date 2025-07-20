@@ -83,36 +83,6 @@ spec:
         volumeMounts:
         - name: minio-data
           mountPath: /data
-      initContainers:
-      - name: create-buckets
-        image: minio/mc:latest
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-          readOnlyRootFilesystem: true
-          runAsNonRoot: true
-          runAsUser: 1001
-        env:
-        - name: MINIO_ACCESS_KEY
-          valueFrom:
-            secretKeyRef:
-              name: {{ .Values.existingSecret | default (printf "%s-secret" (include "thumbnail-service.fullname" .)) }}
-              key: MINIO_ACCESS_KEY
-        - name: MINIO_SECRET_KEY
-          valueFrom:
-            secretKeyRef:
-              name: {{ .Values.existingSecret | default (printf "%s-secret" (include "thumbnail-service.fullname" .)) }}
-              key: MINIO_SECRET_KEY
-        command:
-        - /bin/sh
-        - -c
-        - |
-          sleep 30
-          mc alias set minio http://{{ include "thumbnail-service.fullname" . }}-minio:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY"
-          mc mb minio/{{ .Values.minio.buckets.originals }} --ignore-existing
-          mc mb minio/{{ .Values.minio.buckets.thumbnails }} --ignore-existing
   {{- if not .Values.minio.persistence.enabled }}
       volumes:
       - name: minio-data

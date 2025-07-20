@@ -39,6 +39,61 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      initContainers:
+      - name: wait-for-postgresql
+        image: postgres:15
+        command:
+        - sh
+        - -c
+        - |
+          until pg_isready -h {{ include "thumbnail-service.fullname" . }}-postgresql -p 5432 -U postgres; do
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
+          echo "PostgreSQL is ready"
+      - name: wait-for-redis
+        image: redis:7-alpine
+        command:
+        - sh
+        - -c
+        - |
+          until redis-cli -h {{ include "thumbnail-service.fullname" . }}-redis ping; do
+            echo "Waiting for Redis..."
+            sleep 2
+          done
+          echo "Redis is ready"
+      - name: wait-for-minio
+        image: minio/mc:latest
+        env:
+        - name: MC_CONFIG_DIR
+          value: "/tmp/.mc"
+        - name: MINIO_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.existingSecret | default (printf "%s-secret" (include "thumbnail-service.fullname" .)) }}
+              key: MINIO_ACCESS_KEY
+        - name: MINIO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.existingSecret | default (printf "%s-secret" (include "thumbnail-service.fullname" .)) }}
+              key: MINIO_SECRET_KEY
+        command:
+        - sh
+        - -c
+        - |
+          until mc --config-dir="$MC_CONFIG_DIR" alias set minio http://{{ include "thumbnail-service.fullname" . }}-minio:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY" && mc --config-dir="$MC_CONFIG_DIR" ls minio/ >/dev/null 2>&1; do
+            echo "Waiting for MinIO..."
+            sleep 5
+          done
+          echo "MinIO is ready"
+        volumeMounts:
+        - name: mc-temp
+          mountPath: /tmp
+      volumes:
+      - name: mc-temp
+        emptyDir: {}
+      - name: logs
+        emptyDir: {}
       containers:
       - name: server
         image: "{{ .Values.image.server.repository }}:{{ .Values.image.server.tag }}"
@@ -78,3 +133,6 @@ spec:
           failureThreshold: {{ .Values.healthChecks.server.readiness.failureThreshold }}
         resources:
           {{- toYaml .Values.resources.server | nindent 10 }}
+        volumeMounts:
+        - name: logs
+          mountPath: /app/logs

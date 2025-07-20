@@ -1,0 +1,22 @@
+{{- if .Values.minio.enabled }}
+{{- if .Values.minio.console.nodePort.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "thumbnail-service.fullname" . }}-minio-console-nodeport
+  labels:
+    {{- include "thumbnail-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: minio-console
+spec:
+  type: NodePort
+  ports:
+  - port: 9001
+    targetPort: console
+    protocol: TCP
+    name: console
+    nodePort: {{ .Values.minio.console.nodePort.port }}
+  selector:
+    {{- include "thumbnail-service.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: minio
+{{- end }}
+{{- end }}

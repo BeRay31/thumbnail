@@ -23,25 +23,13 @@ if ! command -v kubectl &> /dev/null; then
     exit 1
 fi
 
-echo "Pulling images..."
-
-# images we need
-images=(
-    "$KIND_NODE_IMAGE"
-    "$POSTGRES_IMAGE"
-    "$REDIS_IMAGE" 
-    "$MINIO_IMAGE"
-    "$MINIO_MC_IMAGE"
-)
-
-for image in "${images[@]}"; do
-    if docker image inspect "$image" >/dev/null 2>&1; then
-        echo "  $image (cached)"
-    else
-        echo "  $image"
-        docker pull "$image" || exit 1
-    fi
-done
+echo "Pulling Kind node image..."
+if docker image inspect "$KIND_NODE_IMAGE" >/dev/null 2>&1; then
+    echo "  $KIND_NODE_IMAGE (cached)"
+else
+    echo "  $KIND_NODE_IMAGE"
+    docker pull "$KIND_NODE_IMAGE" || exit 1
+fi
 
 # create cluster if needed
 if kind get clusters 2>/dev/null | grep -q "^${CLUSTER_NAME}$"; then
@@ -59,24 +47,22 @@ nodes:
   - containerPort: $CONTAINER_PORT
     hostPort: $HOST_PORT
     protocol: TCP
+  - containerPort: 30001
+    hostPort: 30001
+    protocol: TCP
+- role: worker
+- role: worker
 EOF
 
     kubectl config use-context "kind-${CLUSTER_NAME}"
-    
-    echo "Loading infrastructure images..."
-    for image in "${images[@]}"; do
-        [[ "$image" == "$KIND_NODE_IMAGE" ]] && continue
-        echo "  $image"
-        kind load docker-image "$image" --name "$CLUSTER_NAME" || true
-    done
     
     echo "Cluster ready"
 fi
 
 echo
-echo "Next:"
-echo "  ./scripts/build.sh"
-echo "  ./scripts/kind-load-images.sh"
-echo "  ./scripts/deploy.sh"
+echo "Cluster ready! Next steps:"
+echo "  ./scripts/build.sh              # Build application images"
+echo "  ./scripts/kind-load-images.sh   # Load all images to cluster"
+echo "  ./scripts/deploy.sh             # Deploy to cluster"
 echo
 kubectl cluster-info --context "kind-${CLUSTER_NAME}" | head -1
