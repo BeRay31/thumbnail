@@ -1,0 +1,29 @@
+{{- if .Values.podDisruptionBudget.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "thumbnail-service.fullname" . }}-server-pdb
+  labels:
+    {{- include "thumbnail-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: server
+spec:
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "thumbnail-service.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: server
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "thumbnail-service.fullname" . }}-worker-pdb
+  labels:
+    {{- include "thumbnail-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: worker
+spec:
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "thumbnail-service.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: worker
+{{- end }}

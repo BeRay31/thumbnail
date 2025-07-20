@@ -1,0 +1,8 @@
+apiVersion: v2
+name: thumbnail-service
+description: A Helm chart for Thumbnail Generation Service
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+
+dependencies: []

@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "thumbnail-service.fullname" . }}-server
+  labels:
+    {{- include "thumbnail-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: server
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.server.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "thumbnail-service.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: server
+  template:
+    metadata:
+      labels:
+        {{- include "thumbnail-service.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: server
+      {{- with .Values.server.annotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      securityContext:
+        {{- toYaml .Values.securityContext.server | nindent 8 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: server
+        image: "{{ .Values.image.server.repository }}:{{ .Values.image.server.tag }}"
+        imagePullPolicy: {{ .Values.image.server.pullPolicy }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
+        ports:
+        - name: http
+          containerPort: 8000
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: {{ .Values.existingConfigMap | default (printf "%s-config" (include "thumbnail-service.fullname" .)) }}
+        - secretRef:
+            name: {{ .Values.existingSecret | default (printf "%s-secret" (include "thumbnail-service.fullname" .)) }}
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.healthChecks.server.liveness.path }}
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: {{ .Values.healthChecks.server.liveness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.healthChecks.server.liveness.periodSeconds }}
+          timeoutSeconds: {{ .Values.healthChecks.server.liveness.timeoutSeconds }}
+          failureThreshold: {{ .Values.healthChecks.server.liveness.failureThreshold }}
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.healthChecks.server.readiness.path }}
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: {{ .Values.healthChecks.server.readiness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.healthChecks.server.readiness.periodSeconds }}
+          timeoutSeconds: {{ .Values.healthChecks.server.readiness.timeoutSeconds }}
+          failureThreshold: {{ .Values.healthChecks.server.readiness.failureThreshold }}
+        resources:
+          {{- toYaml .Values.resources.server | nindent 10 }}

@@ -1,0 +1,137 @@
+# Default values for thumbnail-service
+
+# Global settings
+global: {}
+
+# Common annotations for all resources
+commonAnnotations: {}
+
+# Image settings
+# Assumed the image build correctly and sent to the cluster manually through the script
+image:
+  server:
+    repository: thumbnail-service-server
+    tag: latest
+    pullPolicy: Never
+  worker:
+    repository: thumbnail-service-worker
+    tag: latest
+    pullPolicy: Never
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 8000
+  annotations: {}
+
+# Deployment configuration
+server:
+  replicaCount: 1
+  annotations: {}
+  
+worker:
+  replicaCount: 2
+  annotations: {}
+
+# Resource limits
+resources:
+  server:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  worker: # expect heavy processing here
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+
+# PostgreSQL configuration
+postgresql:
+  enabled: true
+  database: thumbnail
+  auth:
+    username: admin
+    password: admin
+  persistence:
+    enabled: true
+    size: 8Gi
+    storageClass: ""
+
+# External PostgreSQL (when postgresql.enabled: false)
+externalPostgresql:
+  host: ""
+  port: 5432
+  database: thumbnail
+  
+# Redis configuration
+redis:
+  enabled: true
+
+# External Redis (when redis.enabled: false)
+externalRedis:
+  host: ""
+  port: 6379
+
+# MinIO configuration
+minio:
+  enabled: true
+  auth:
+    accessKey: minioadmin
+    secretKey: minioadmin
+  buckets:
+    originals: raws
+    thumbnails: thumbnails
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: ""
+
+# External MinIO (when minio.enabled: false)
+externalMinio:
+  endpoint: ""
+  
+# External ConfigMap/Secret (optional)
+existingConfigMap: ""
+existingSecret: ""
+
+# Security contexts
+securityContext:
+  server:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+  worker:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+
+# Health checks
+healthChecks:
+  server:
+    liveness:
+      path: /healthz
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+    readiness:
+      path: /healthz/detailed
+      initialDelaySeconds: 5
+      periodSeconds: 5
+      timeoutSeconds: 3
+      failureThreshold: 3
+
+# Pod disruption budgets
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
+
+# Node selection
+nodeSelector: {}
+tolerations: []
+affinity: {}

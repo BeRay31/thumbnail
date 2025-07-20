@@ -1,0 +1,161 @@
+{{- if .Values.minio.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "thumbnail-service.fullname" . }}-minio
+  labels:
+    {{- include "thumbnail-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: minio
+spec:
+  serviceName: {{ include "thumbnail-service.fullname" . }}-minio
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "thumbnail-service.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: minio
+  template:
+    metadata:
+      labels:
+        {{- include "thumbnail-service.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: minio
+    spec:
+      securityContext:
+        fsGroup: 1001
+        runAsUser: 1001
+        runAsNonRoot: true
+      containers:
+      - name: minio
+        image: minio/minio:latest
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          runAsUser: 1001
+        args:
+        - server
+        - /data
+        - --console-address
+        - ":9001"
+        env:
+        - name: MINIO_ROOT_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.existingSecret | default (printf "%s-secret" (include "thumbnail-service.fullname" .)) }}
+              key: MINIO_ACCESS_KEY
+        - name: MINIO_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.existingSecret | default (printf "%s-secret" (include "thumbnail-service.fullname" .)) }}
+              key: MINIO_SECRET_KEY
+        ports:
+        - name: api
+          containerPort: 9000
+          protocol: TCP
+        - name: console
+          containerPort: 9001
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /minio/health/live
+            port: 9000
+          initialDelaySeconds: 60
+          periodSeconds: 20
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /minio/health/ready
+            port: 9000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        resources:
+          limits:
+            memory: 1Gi
+            cpu: 500m
+          requests:
+            memory: 512Mi
+            cpu: 250m
+        volumeMounts:
+        - name: minio-data
+          mountPath: /data
+      initContainers:
+      - name: create-buckets
+        image: minio/mc:latest
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1001
+        env:
+        - name: MINIO_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.existingSecret | default (printf "%s-secret" (include "thumbnail-service.fullname" .)) }}
+              key: MINIO_ACCESS_KEY
+        - name: MINIO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.existingSecret | default (printf "%s-secret" (include "thumbnail-service.fullname" .)) }}
+              key: MINIO_SECRET_KEY
+        command:
+        - /bin/sh
+        - -c
+        - |
+          sleep 30
+          mc alias set minio http://{{ include "thumbnail-service.fullname" . }}-minio:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY"
+          mc mb minio/{{ .Values.minio.buckets.originals }} --ignore-existing
+          mc mb minio/{{ .Values.minio.buckets.thumbnails }} --ignore-existing
+  {{- if not .Values.minio.persistence.enabled }}
+      volumes:
+      - name: minio-data
+        emptyDir: {}
+  {{- end }}
+{{- if .Values.minio.persistence.enabled }}
+  volumeClaimTemplates:
+  - metadata:
+      name: minio-data
+      labels:
+        {{- include "thumbnail-service.labels" . | nindent 8 }}
+        app.kubernetes.io/component: minio
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: {{ .Values.minio.persistence.size }}
+      {{- if .Values.minio.persistence.storageClass }}
+      storageClassName: {{ .Values.minio.persistence.storageClass }}
+      {{- end }}
+{{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "thumbnail-service.fullname" . }}-minio
+  labels:
+    {{- include "thumbnail-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: minio
+spec:
+  type: ClusterIP
+  clusterIP: None  # Headless service for StatefulSet
+  ports:
+  - port: 9000
+    targetPort: api
+    protocol: TCP
+    name: api
+  - port: 9001
+    targetPort: console
+    protocol: TCP
+    name: console
+  selector:
+    {{- include "thumbnail-service.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: minio
+{{- end }}
