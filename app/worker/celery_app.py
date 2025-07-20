@@ -20,7 +20,7 @@ celery_app.conf.update(
     result_serializer="json",
     timezone="UTC",
     enable_utc=True,
-    # Disable Celery's default logging to use our custom logging
+    # Disable Celery's default logging to use custom logging
     worker_hijack_root_logger=False,
     worker_log_color=False,
 )
