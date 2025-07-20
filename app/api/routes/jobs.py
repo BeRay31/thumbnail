@@ -62,15 +62,9 @@ def get_job_status(job_id: UUID, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Job not found")
     return job
 
-@router.get("/jobs", response_model=list[job_schemas.JobStatusResponse])
-def list_jobs(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    """List jobs"""
-    validate_pagination_params(skip, limit)
-    return db.query(db_models.Job).order_by(db_models.Job.created_at.desc()).offset(skip).limit(limit).all()
-
 @router.get("/jobs", response_model=list[job_schemas.JobStatusResponse], tags=["Thumbnail Jobs"])
-def list_jobs(skip: int = 0, limit: int = 1000, db: Session = Depends(get_db)):
-    """List all jobs"""
+def list_jobs(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    """List all jobs with pagination"""
     logger.info(f"Listing jobs (skip={skip}, limit={limit})")
     
     try:

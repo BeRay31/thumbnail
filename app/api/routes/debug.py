@@ -108,3 +108,26 @@ async def debug_config():
                 config[key] = "***"
     
     return config
+
+@router.get("/logs")
+async def debug_logs(lines: int = 100):
+    """Get recent application logs (for debugging)"""
+    try:
+        import os
+        log_file = "/app/logs/app.log"
+        
+        if not os.path.exists(log_file):
+            return {"logs": [], "message": "Log file not found"}
+        
+        with open(log_file, "r") as f:
+            all_lines = f.readlines()
+            recent_lines = all_lines[-lines:] if len(all_lines) > lines else all_lines
+        
+        return {
+            "logs": [line.strip() for line in recent_lines],
+            "total_lines": len(recent_lines),
+            "log_file": log_file
+        }
+    except Exception as e:
+        logger.error(f"Failed to read logs: {e}")
+        return {"error": f"Failed to read logs: {str(e)}"}
