@@ -15,6 +15,7 @@ help:
 	@echo "  restart   - Restart all services"
 	@echo ""
 	@echo "Kubernetes (Production):"
+	@echo "  k8s-setup   - Create Kind cluster"
 	@echo "  k8s-build   - Build Docker images for K8s"
 
 # Build Docker images
@@ -42,7 +43,8 @@ clean:
 restart: down up
 
 # Kubernetes targets
+k8s-setup:
+	./scripts/kind-setup.sh
 
 k8s-build:
 	./scripts/build.sh
-
